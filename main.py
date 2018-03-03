@@ -5,6 +5,8 @@ import os
 
 logging.basicConfig(stream=sys.stderr, level=logging.INFO)
 
+from Classes import Container
+
 description_message = """
 A program for correcting read based on BUSCO alignments
 """
@@ -14,8 +16,12 @@ def process_args(args):
     if (args.buscoTSV):
         raise NotImplementedError("I haven't implemented this feature yet")
     elif (args.geneDirectory):
-        gene_list = filter(lambda x: x.endswith(".fasta"), os.listdir(args.geneDirectory))
-    logging.info("%s genes will be processed" % len(gene_list))
+        genes = [os.path.join(args.geneDirectory, f) for f in os.listdir(args.geneDirectory)]
+        genes = filter(lambda x: x.endswith(".fasta"), genes)
+    logging.info("%s genes will be processed" % len(genes))
+
+    my_container = Container(args.assembly, genes)
+    print(my_container)
 
 def main():
     parser = argparse.ArgumentParser(description=description_message)
