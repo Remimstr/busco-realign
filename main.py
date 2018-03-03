@@ -20,8 +20,8 @@ def process_args(args):
         genes = filter(lambda x: x.endswith(".fasta"), genes)
     logging.info("%s genes will be processed" % len(genes))
 
-    my_container = Container(args.assembly, genes)
-    print(my_container)
+    container = Container(args.assembly, genes)
+    print(container.genes[0])
 
 def main():
     parser = argparse.ArgumentParser(description=description_message)

@@ -1,8 +1,16 @@
 from Bio import SeqIO
+import os
 
 class Gene:
     def __init__(self, gene):
-        gene_obj = list(SeqIO.parse(gene, "fasta"))
+        self.name = os.path.basename(gene)
+        self.records = list(SeqIO.parse(gene, "fasta"))
+        self.best = None
 
     def __str__(self):
-        print "A gene will be here"
+        ret_str = "For gene %s: " % self.name
+        if (self.best == None):
+            ret_str += "There is no best record yet"
+        else:
+            ret_str += self.records[self.best].__str__()
+        return ret_str
