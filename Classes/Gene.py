@@ -35,3 +35,4 @@ class Gene:
                     SeqIO.write(record, output_h, "fasta")
             record_list.append(record_fasta_f)
         logger.info("Split gene %s into %s records" % (self.name, len(record_list)))
+        return record_list
