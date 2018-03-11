@@ -4,7 +4,7 @@ import os
 class Gene:
     def __init__(self, gene):
         self.name = os.path.basename(gene)
-        self.records = list(SeqIO.parse(gene, "fasta"))
+        self.records = gene
         self.best = None
 
     def __str__(self):

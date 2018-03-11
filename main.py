@@ -1,11 +1,12 @@
 import argparse
-import logging, sys
+import sys, os
 
-import os
+import log
 
-logging.basicConfig(stream=sys.stderr, level=logging.INFO)
+logger = log.setup_custom_logger("root")
 
 from Classes import Container
+from process import initial_alignment
 
 description_message = """
 A program for correcting read based on BUSCO alignments
@@ -17,11 +18,15 @@ def process_args(args):
         raise NotImplementedError("I haven't implemented this feature yet")
     elif (args.geneDirectory):
         genes = [os.path.join(args.geneDirectory, f) for f in os.listdir(args.geneDirectory)]
-        genes = filter(lambda x: x.endswith(".fasta"), genes)
-    logging.info("%s genes will be processed" % len(genes))
+        genes = list(filter(lambda x: x.endswith(".fasta"), genes))
+    logger.info("%s genes will be processed" % len(genes))
 
     container = Container(args.assembly, genes)
-    print(container.genes[0])
+
+    # Prepares a new directory for intermediate files
+    directory = "tmp"
+    os.makedirs(directory, exist_ok=True)
+    initial_alignment(container, directory)
 
 def main():
     parser = argparse.ArgumentParser(description=description_message)

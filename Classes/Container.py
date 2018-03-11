@@ -1,5 +1,5 @@
-from Assembly import Assembly
-from Gene import Gene
+from .Assembly import Assembly
+from .Gene import Gene
 
 class Container:
     def __init__(self, assembly, genes):
