@@ -8,7 +8,7 @@ logger = log.setup_custom_logger("root")
 pickle_file = "container_pickle.pkl"
 
 from Classes import Container
-from process import initial_alignment
+from process import *
 
 description_message = """
 A program for correcting read based on BUSCO alignments
@@ -26,7 +26,16 @@ def save_pickle(container, pickle_path):
 def stage_one(container, directory):
     stage_one_d = os.path.join(directory, "stage_one")
     os.makedirs(stage_one_d, exist_ok=True)
-    initial_alignment(container, stage_one_d)
+    for gene in container.genes:
+        alignment(container.assembly.record, gene, stage_one_d, gene.record.get_records())
+        gene.set_best_record()
+
+def stage_two(container, directory):
+    stage_two_d = os.path.join(directory, "stage_two")
+    os.makedirs(stage_two_d, exist_ok=True)
+    split_aligned_records(container, stage_two_d)
+    for gene in container.genes:
+        alignment(container.assembly.record, gene, stage_two_d, gene.fragments)
 
 def process_args(args):
     gene_list = []
@@ -64,6 +73,7 @@ def main():
     else:
         container = load_pickle(pickle_path)
 
+    stage_two(container, tmp)
 
 if __name__ == "__main__":
     main()

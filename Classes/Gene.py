@@ -1,6 +1,5 @@
 import os
 from Bio import SeqIO
-from Bio.Blast import NCBIXML
 
 import logging
 from .Records import Records
@@ -11,8 +10,8 @@ class Gene:
     def __init__(self, gene, path):
         base = os.path.basename(gene)
         self.name = os.path.splitext(base)[0]
-        self.best_record = None
-        # Dictionary of {name: {record: record_file_path, alignment: alignment_file_path}}
+        self.best_record = {"name": None, "data": None}
+        self.fragments = {"upstream": None, "aligned": None, "downstream": None}
         self.records = Records()
         self.split_records(gene, path)
 
@@ -43,5 +42,5 @@ class Gene:
         logger.info("Split gene %s into %s records" % (self.name, len(self.records.get_records())))
 
     def set_best_record(self):
-        self.best_record = self.records.get_best_record()
-        logger.info("Chose a new best record %s for gene %s" % (self.best_record, self.name))
+        self.best_record = self.records.get_best_record(self.best_record)
+        logger.info("Chose a new best record %s for gene %s" % (self.best_record["name"], self.name))
