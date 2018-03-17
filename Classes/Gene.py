@@ -3,6 +3,7 @@ from Bio import SeqIO
 from Bio.Blast import NCBIXML
 
 import logging
+from .Records import Records
 
 logger = logging.getLogger("root")
 
@@ -10,9 +11,10 @@ class Gene:
     def __init__(self, gene, path):
         base = os.path.basename(gene)
         self.name = os.path.splitext(base)[0]
-        self.best_alignment = None
-        self.record_files = self.split_records(gene, path)
-        self.alignment_files = []
+        self.best_record = None
+        # Dictionary of {name: {record: record_file_path, alignment: alignment_file_path}}
+        self.records = Records()
+        self.split_records(gene, path)
 
     def __str__(self):
         ret_str = "For gene %s: " % self.name
@@ -21,10 +23,6 @@ class Gene:
         else:
             ret_str += self.records[self.best].__str__()
         return ret_str
-
-    def add_alignment_file(self, alignment_f):
-        if (alignment_f not in self.alignment_files):
-            self.alignment_files.append(alignment_f)
 
     # Takes a path, and a gene object and makes a new directory
     # for the gene at path, then splits the gene's records and places
@@ -39,28 +37,9 @@ class Gene:
             if (not os.path.exists(record_fasta_f)):
                 with open(record_fasta_f, "w") as output_h:
                     SeqIO.write(record, output_h, "fasta")
-            record_list.append(record_fasta_f)
-        logger.info("Split gene %s into %s records" % (self.name, len(record_list)))
-        return record_list
+            self.records.create_record(record.name, record_fasta_f)
+        logger.info("Split gene %s into %s records" % (self.name, len(self.records.get_records())))
 
-    # Chooses the best record that exists, remove it from the list of
-    # record files and place it at "best"
-    def choose_best_match(self):
-        if not self.alignment_files:
-            raise RuntimeError("Please make a list of records before choosing a best match")
-        highest_b = 0
-        best_alignment = None
-        for alignment_f in self.alignment_files:
-            with open(alignment_f, "rU") as result_h:
-                try:
-                    record = NCBIXML.read(result_h)
-                    hsp = record.alignments[0].hsps[0]
-                    b = hsp.bits
-                    if (b > highest_b):
-                        highest_b = b
-                        best_alignment = alignment_f
-                except:
-                    logger.info("%s did not align, ignoring" % alignment_f)
-        self.alignment_files.remove(best_alignment)
-        self.best_alignment = best_alignment
-        logger.info("%s has a new best alignment: %s" % (self.name, self.best_alignment))
+    def set_best_record(self):
+        self.best_record = self.records.get_best_record()
+        logger.info("Chose a new best record %s for gene %s" % (self.best_record, self.name))
