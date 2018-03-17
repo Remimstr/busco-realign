@@ -1,9 +1,11 @@
 import argparse
 import sys, os
+import pickle
 
 import log
 
 logger = log.setup_custom_logger("root")
+pickle_file = "container_pickle.pkl"
 
 from Classes import Container
 from process import initial_alignment
@@ -11,6 +13,20 @@ from process import initial_alignment
 description_message = """
 A program for correcting read based on BUSCO alignments
 """
+
+# Use pickle to persist classes across stages (for easier development)
+def load_pickle(pickle_path):
+    with open(pickle_path, "rb") as pp:
+        return pickle.load(pp)
+
+def save_pickle(container, pickle_path):
+    with open(pickle_path, "wb") as pp:
+        pickle.dump(container, pp, pickle.HIGHEST_PROTOCOL)
+
+def stage_one(container, directory):
+    stage_one_d = os.path.join(directory, "stage_one")
+    os.makedirs(stage_one_d, exist_ok=True)
+    initial_alignment(container, stage_one_d)
 
 def process_args(args):
     gene_list = []
@@ -20,14 +36,7 @@ def process_args(args):
         genes = [os.path.join(args.geneDirectory, f) for f in os.listdir(args.geneDirectory)]
         genes = list(filter(lambda x: x.endswith(".fasta"), genes))
     logger.info("%s genes will be processed" % len(genes))
-
-    # Prepares a new directory for intermediate files
-    directory = "tmp"
-    os.makedirs(directory, exist_ok=True)
-
-    container = Container(args.assembly, genes, os.path.join(os.getcwd(), directory), args.forceOverwrite)
-
-    initial_alignment(container, directory)
+    return genes
 
 def main():
     parser = argparse.ArgumentParser(description=description_message)
@@ -39,7 +48,22 @@ def main():
     args = parser.parse_args()
     args.assembly = "/mnt/extra_storage/jshlorv/minION_data/psy_508_seqRun/assemblies/miniasm_test_assemblies/508_v2/qu75/508_v2_pc_mLmH_GtQu75_tr50.1000_1000_02_50.contigs.ONT.fa"
     args.geneDirectory = "../508_v2_pc_mLmH_GtQu75_tr50.1000_1000_02_50.contigs.ONT_gam_1e-03/Fragmented"
-    process_args(args)
+    genes = process_args(args)
+
+    # Prepares a new directory for intermediate files
+    tmp = "tmp"
+    os.makedirs(tmp, exist_ok=True)
+
+    # Make a new pickle path for class storage
+    pickle_path = os.path.join(tmp, pickle_file)
+
+    if not os.path.exists(pickle_path):
+        container = Container(args.assembly, genes, os.path.join(os.getcwd(), tmp), args.forceOverwrite)
+        stage_one(container, tmp)
+        save_pickle(container, pickle_path)
+    else:
+        container = load_pickle(pickle_path)
+
 
 if __name__ == "__main__":
     main()

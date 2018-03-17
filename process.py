@@ -7,9 +7,9 @@ from alignment import *
 logger = logging.getLogger("root")
 
 # Manages the initial alignment where we align each gene with the query
-def initial_alignment(container, directory):
+def initial_alignment(container, stage_one_d):
     # Make a new directory for this process
-    alignments_d = os.path.join(directory, "alignments")
+    alignments_d = os.path.join(stage_one_d, "alignments")
     os.makedirs(alignments_d, exist_ok=True)
 
     for gene in container.genes:
@@ -24,3 +24,4 @@ def initial_alignment(container, directory):
                 perform_alignment(container.assembly.record, record_f, alignment_f)
 
         gene.set_best_record()
+

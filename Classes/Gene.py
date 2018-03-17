@@ -28,8 +28,10 @@ class Gene:
     # for the gene at path, then splits the gene's records and places
     # them inside that directory
     def split_records(self, gene, path):
+        directory = os.path.join(path, "records")
+        os.makedirs(directory, exist_ok=True)
         record_list = []
-        gene_d = os.path.join(path, self.name)
+        gene_d = os.path.join(directory, self.name)
         os.makedirs(gene_d, exist_ok=True)
         for record in list(SeqIO.parse(gene, "fasta")):
             record_fasta_f = os.path.join(gene_d, record.name + ".fasta").replace(":", "-")
