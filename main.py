@@ -27,7 +27,7 @@ def stage_one(container, directory):
     stage_one_d = os.path.join(directory, "stage_one")
     os.makedirs(stage_one_d, exist_ok=True)
     for gene in container.genes:
-        alignment(container.assembly.record, gene, stage_one_d, gene.record.get_records())
+        alignment(container.assembly.record, gene, stage_one_d, gene.records.get_records())
         gene.set_best_record()
 
 def stage_two(container, directory):
@@ -36,6 +36,9 @@ def stage_two(container, directory):
     split_aligned_records(container, stage_two_d)
     for gene in container.genes:
         alignment(container.assembly.record, gene, stage_two_d, gene.fragments)
+
+def stage_three(container, directory):
+    correction(container, directory)
 
 def process_args(args):
     gene_list = []
@@ -74,6 +77,8 @@ def main():
         container = load_pickle(pickle_path)
 
     stage_two(container, tmp)
+
+    stage_three(container, tmp)
 
 if __name__ == "__main__":
     main()

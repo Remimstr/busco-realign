@@ -97,7 +97,7 @@ class Records:
             alignments.append(value["alignment"])
         return alignments
 
-    def create_record(self, name, record_file_path, alignment_file_path):
+    def create_record(self, name, record_file_path="", alignment_file_path=""):
         new_record = Record(record_file_path, alignment_file_path)
         self.records[name] = new_record
 
