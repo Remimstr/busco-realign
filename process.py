@@ -5,6 +5,7 @@ import logging
 from alignment import perform_alignment
 
 from Classes import Correction
+from Classes import Stats
 
 logger = logging.getLogger("root")
 
@@ -39,10 +40,12 @@ def split_aligned_records(container, stage_two_d):
 
 # Manages the correction stage
 def correction(container, stage_three_d):
+    stats = Stats()
     for gene in container.genes:
         upstream = gene.fragments["upstream"].get_alignment_file_path()
         aligned = gene.fragments["aligned"].get_alignment_file_path()
         downstream = gene.fragments["downstream"].get_alignment_file_path()
         correction = Correction(upstream, aligned, downstream)
-        correction.correct(container)
+        correction.correct(stats)
         container.add_correction(correction)
+    print(stats)
