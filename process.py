@@ -45,7 +45,7 @@ def correction(container, stage_three_d):
         upstream = gene.fragments["upstream"].get_alignment_file_path()
         aligned = gene.fragments["aligned"].get_alignment_file_path()
         downstream = gene.fragments["downstream"].get_alignment_file_path()
-        correction = Correction(upstream, aligned, downstream)
+        correction = Correction(container.assembly.record, upstream, aligned, downstream, gene.best_record["data"].get_alignment_file_path())
         correction.correct(stats)
         container.add_correction(correction)
     print(stats)
