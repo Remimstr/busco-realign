@@ -48,4 +48,5 @@ def correction(container, stage_three_d):
         correction = Correction(container.assembly.record, upstream, aligned, downstream, gene.best_record["data"].get_alignment_file_path())
         correction.correct(stats)
         container.add_correction(correction)
+    stats.return_kmer_stats()
     print(stats)

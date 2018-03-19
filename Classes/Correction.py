@@ -1,6 +1,7 @@
 from Bio.Blast import NCBIXML
 from Bio import SeqIO
 from copy import deepcopy
+from random import randint
 
 import logging
 
@@ -26,6 +27,14 @@ class Correction:
 
     def return_assembly_copy(self):
         return deepcopy(self.assembly)
+
+    # Generates a string of random base pairs x characters long
+    def generate_random_bp_str(self, x):
+        bases = ["a", "t", "c", "g"]
+        ret = ""
+        for i in range(1, x):
+            ret += bases[randint(0, 3)]
+        return ret
 
     # This function opens an alignment and returns the hsp object
     def return_hsp(self, alignment_f):
@@ -94,7 +103,18 @@ class Correction:
         logger.debug("Frame 2           : %s" % self.index_assembly(self.assembly, first_sbjct_start-2, second_sbjct_end))
         logger.debug("Frame 3           : %s" % self.index_assembly(self.assembly, first_sbjct_start-3, second_sbjct_end))
 
-    def correct_frame(self, first_a, second_a):
+    # This function takes an open assembly object and a position and collects kmer stats on it
+    def collect_kmer_stats(self, assembly, pos, stats):
+        half_kmer = round(stats.kmer_size / 2)
+        for w in range(0, stats.window_size):
+            # We only want to add the kmer here once
+            if (w == 0):
+                stats.add_kmer(str(assembly.seq[pos-half_kmer:pos+half_kmer]))
+            else:
+                stats.add_kmer(str(assembly.seq[(pos-half_kmer)-w:(pos+half_kmer)-w]))
+                stats.add_kmer(str(assembly.seq[(pos-half_kmer)+w:(pos+half_kmer)+w]))
+
+    def correct_frame(self, first_a, second_a, stats):
         # It seems counter-intuitive but we want to fix the end of the first alignment and the start of the second
         first_sbjct_start = first_a.sbjct_start
         first_sbjct_end = first_a.sbjct_end
@@ -107,8 +127,10 @@ class Correction:
         # Get a new copy of the assembly
         with open (self.return_assembly_copy(), "rU") as assembly_h:
             assembly = SeqIO.read(assembly_h, "fasta")
+            # Collect kmer statistics
+            self.collect_kmer_stats(assembly, first_sbjct_end, stats)
             # Add a new base pair
-            assembly.seq = assembly.seq[:first_sbjct_end-1] + (frame_offset * "a") + assembly.seq[second_sbjct_start-1:]
+            assembly.seq = assembly.seq[:first_sbjct_end-1] + self.generate_random_bp_str(frame_offset) + assembly.seq[second_sbjct_start-1:]
             logger.debug("Added %s new base pairs" % frame_offset)
             logger.debug("New Frame         : %s" % (assembly.seq[first_sbjct_start-1:second_sbjct_end]).translate())
             logger.debug("Old Alignment     : %s" % (self.f.query))
@@ -120,18 +142,30 @@ class Correction:
         # logger.debug("Flag is: %s" % flag)
         if (flag == 1):
             stats.increment_upstream_aligned()
-            self.correct_frame(self.u, self.a)
+            self.correct_frame(self.u, self.a, stats)
 
         elif (flag == 3):
             stats.increment_aligned_downstream()
+            self.correct_frame(self.a, self.d, stats)
+
         elif (flag == 4):
             stats.increment_upstream_aligned_downstream()
+            self.correct_frame(self.u, self.a, stats)
+            self.correct_frame(self.a, self.d, stats)
+
         elif (flag == 5):
             stats.increment_aligned_upstream()
+            self.correct_frame(self.a, self.u, stats)
+
         elif (flag == 7):
             stats.increment_downstream_aligned()
+            self.correct_frame(self.d, self.a, stats)
+
         elif (flag == 12):
             stats.increment_downstream_aligned_upstream()
+            self.correct_frame(self.d, self.a, stats)
+            self.correct_frame(self.a, self.u, stats)
+
         elif (flag == 0):
             stats.increment_no_relationship()
         else:

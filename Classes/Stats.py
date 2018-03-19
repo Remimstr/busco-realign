@@ -6,6 +6,10 @@ logger = logging.getLogger("root")
 
 class Stats:
     def __init__(self):
+        self.window_size = 5
+        self.kmer_size = 6
+        # Dictionary of kmer frequencies
+        self.kmers = {}
         self.stats  = {
            "initial_alignments": {
                "both_aligned": 0,
@@ -73,3 +77,13 @@ class Stats:
 
     def increment_aligned_upstream(self):
         self.stats["relationships"]["reverse"]["aligned-upstream"] += 1
+
+    ### KMER STATS SECTION
+    def add_kmer(self, kmer):
+        if kmer in self.kmers:
+            self.kmers[kmer] += 1
+        else:
+            self.kmers[kmer] = 1
+
+    def return_kmer_stats(self):
+        print(self.kmers)
