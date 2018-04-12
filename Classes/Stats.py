@@ -7,7 +7,7 @@ logger = logging.getLogger("root")
 class Stats:
     def __init__(self):
         self.window_size = 5
-        self.kmer_size = 6
+        self.kmer_size = 4
         # Dictionary of kmer frequencies
         self.kmers = {}
         self.stats  = {
@@ -85,5 +85,7 @@ class Stats:
         else:
             self.kmers[kmer] = 1
 
-    def return_kmer_stats(self):
-        print(self.kmers)
+    def dump_kmer_stats(self, kmer_stats_f):
+        with open(kmer_stats_f, "w") as outfile:
+            json.dump(self.kmers, outfile)
+        logger.info("Dumped kmer stats to file %s" % kmer_stats_f)

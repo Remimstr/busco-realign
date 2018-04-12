@@ -1,4 +1,5 @@
 import os, sys
+from Bio import SeqIO
 
 import logging
 
@@ -41,12 +42,17 @@ def split_aligned_records(container, stage_two_d):
 # Manages the correction stage
 def correction(container, stage_three_d):
     stats = Stats()
-    for gene in container.genes:
-        upstream = gene.fragments["upstream"].get_alignment_file_path()
-        aligned = gene.fragments["aligned"].get_alignment_file_path()
-        downstream = gene.fragments["downstream"].get_alignment_file_path()
-        correction = Correction(container.assembly.record, upstream, aligned, downstream, gene.best_record["data"].get_alignment_file_path())
-        correction.correct(stats)
-        container.add_correction(correction)
-    stats.return_kmer_stats()
-    print(stats)
+    assembly_f = container.copy_assembly()
+    with open(container.copy_assembly(), "r") as assembly_f:
+        assembly_o = SeqIO.read(assembly_f, "fasta")
+        for gene in container.genes:
+            upstream = gene.fragments["upstream"].get_alignment_file_path()
+            aligned = gene.fragments["aligned"].get_alignment_file_path()
+            downstream = gene.fragments["downstream"].get_alignment_file_path()
+            correction = Correction(container.assembly.record, upstream, aligned, downstream, gene.best_record["data"].get_alignment_file_path())
+            correction.correct(assembly_o, stats)
+            container.add_correction(correction)
+        stats.dump_kmer_stats("kmer_stats.json")
+        print(stats)
+    with open(container.out_assembly, "w") as assembly_h:
+        SeqIO.write(assembly_o, assembly_h, "fasta")

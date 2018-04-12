@@ -25,9 +25,6 @@ class Correction:
             assembly_o = SeqIO.read(assembly_h, "fasta")
             return assembly_o.seq[start:end].translate()
 
-    def return_assembly_copy(self):
-        return deepcopy(self.assembly)
-
     # Generates a string of random base pairs x characters long
     def generate_random_bp_str(self, x):
         bases = ["a", "t", "c", "g"]
@@ -114,7 +111,7 @@ class Correction:
                 stats.add_kmer(str(assembly.seq[(pos-half_kmer)-w:(pos+half_kmer)-w]))
                 stats.add_kmer(str(assembly.seq[(pos-half_kmer)+w:(pos+half_kmer)+w]))
 
-    def correct_frame(self, first_a, second_a, stats):
+    def correct_frame(self, first_a, second_a, assembly_o, stats):
         # It seems counter-intuitive but we want to fix the end of the first alignment and the start of the second
         first_sbjct_start = first_a.sbjct_start
         first_sbjct_end = first_a.sbjct_end
@@ -124,47 +121,44 @@ class Correction:
         self.exploratory(first_a, second_a, frame_offset)
 
         logger.debug("*** BEGIN CORRECTION OF FRAME %s ***" % frame_offset)
-        # Get a new copy of the assembly
-        with open (self.return_assembly_copy(), "rU") as assembly_h:
-            assembly = SeqIO.read(assembly_h, "fasta")
-            # Collect kmer statistics
-            self.collect_kmer_stats(assembly, first_sbjct_end, stats)
-            # Add a new base pair
-            assembly.seq = assembly.seq[:first_sbjct_end-1] + self.generate_random_bp_str(frame_offset) + assembly.seq[second_sbjct_start-1:]
-            logger.debug("Added %s new base pairs" % frame_offset)
-            logger.debug("New Frame         : %s" % (assembly.seq[first_sbjct_start-1:second_sbjct_end]).translate())
-            logger.debug("Old Alignment     : %s" % (self.f.query))
-        logger.debug("*** END CORRECTION OF FRAME %s ***" % frame_offset)
+        # Collect kmer statistics
+        self.collect_kmer_stats(assembly_o, first_sbjct_end, stats)
+        # Add a new base pair
+        assembly_o.seq = assembly_o.seq[:first_sbjct_end-1] + self.generate_random_bp_str(frame_offset) + assembly_o.seq[second_sbjct_start-1:]
+        logger.debug("Added %s new base pairs" % frame_offset)
+        logger.debug("New Frame         : %s" % (assembly_o.seq[first_sbjct_start-1:second_sbjct_end]).translate())
+        logger.debug("Old Alignment     : %s" % (self.f.query))
+        logger.debug("*** END CORRECTION OF FRAME %s   ***" % frame_offset)
 
     ### END OF REPAIR SECTION
 
-    def process_logic_flag(self, flag, stats):
+    def process_logic_flag(self, flag, assembly_o, stats):
         # logger.debug("Flag is: %s" % flag)
         if (flag == 1):
             stats.increment_upstream_aligned()
-            self.correct_frame(self.u, self.a, stats)
+            self.correct_frame(self.u, self.a, assembly_o, stats)
 
         elif (flag == 3):
             stats.increment_aligned_downstream()
-            self.correct_frame(self.a, self.d, stats)
+            self.correct_frame(self.a, self.d, assembly_o, stats)
 
         elif (flag == 4):
             stats.increment_upstream_aligned_downstream()
-            self.correct_frame(self.u, self.a, stats)
-            self.correct_frame(self.a, self.d, stats)
+            self.correct_frame(self.u, self.a, assembly_o, stats)
+            self.correct_frame(self.a, self.d, assembly_o, stats)
 
         elif (flag == 5):
             stats.increment_aligned_upstream()
-            self.correct_frame(self.a, self.u, stats)
+            self.correct_frame(self.a, self.u, assembly_o, stats)
 
         elif (flag == 7):
             stats.increment_downstream_aligned()
-            self.correct_frame(self.d, self.a, stats)
+            self.correct_frame(self.d, self.a, assembly_o, stats)
 
         elif (flag == 12):
             stats.increment_downstream_aligned_upstream()
-            self.correct_frame(self.d, self.a, stats)
-            self.correct_frame(self.a, self.u, stats)
+            self.correct_frame(self.d, self.a, assembly_o, stats)
+            self.correct_frame(self.a, self.u, assembly_o, stats)
 
         elif (flag == 0):
             stats.increment_no_relationship()
@@ -172,7 +166,7 @@ class Correction:
             logger.debug("Undetermined flag: %s" % flag)
             stats.increment_undetermined_relationship()
 
-    def determine_relationships(self, stats):
+    def determine_relationships(self, assembly_o, stats):
         # Use some flag logic to resolve all states
         flag = 0
         if (self.u and self.a):
@@ -189,9 +183,9 @@ class Correction:
             # Case where the downstream end is upstream of the alignment start
             if (abs(self.d.sbjct_end - self.a.sbjct_start) < self.error_distance):
                 flag += 7
-        self.process_logic_flag(flag, stats)
+        self.process_logic_flag(flag, assembly_o, stats)
 
-    def correct(self, stats):
+    def correct(self, assembly_o, stats):
         self.collect_initial_stats(stats)
         # self.debug_info()
-        self.determine_relationships(stats)
+        self.determine_relationships(assembly_o, stats)

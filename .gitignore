@@ -1,2 +1,6 @@
 *.pyc
 tmp
+results
+*.json
+*.fa
+*.fasta

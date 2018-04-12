@@ -56,10 +56,12 @@ def main():
     mxg = parser.add_mutually_exclusive_group(required=True)
     mxg.add_argument("-d", "--geneDirectory", action="store", type=str)
     mxg.add_argument("-t", "--buscoTSV", action="store", type=str)
-    parser.add_argument("-o", "--forceOverwrite", action="store", type=bool, default=False)
+    parser.add_argument("-o", "--outfile", action="store", type=str)
+    parser.add_argument("-f", "--forceOverwrite", action="store", type=bool, default=False)
     args = parser.parse_args()
     args.assembly = "/mnt/extra_storage/jshlorv/minION_data/psy_508_seqRun/assemblies/miniasm_test_assemblies/508_v2/qu75/508_v2_pc_mLmH_GtQu75_tr50.1000_1000_02_50.contigs.ONT.fa"
     args.geneDirectory = "../508_v2_pc_mLmH_GtQu75_tr50.1000_1000_02_50.contigs.ONT_gam_1e-03/Fragmented"
+    args.outfile = "./output_assembly.fa"
     genes = process_args(args)
 
     # Prepares a new directory for intermediate files
@@ -70,7 +72,7 @@ def main():
     pickle_path = os.path.join(tmp, pickle_file)
 
     if not os.path.exists(pickle_path):
-        container = Container(args.assembly, genes, os.path.join(os.getcwd(), tmp), args.forceOverwrite)
+        container = Container(args.assembly, args.outfile, genes, os.path.join(os.getcwd(), tmp), args.forceOverwrite)
         stage_one(container, tmp)
         save_pickle(container, pickle_path)
     else:
